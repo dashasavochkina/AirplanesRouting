@@ -63,8 +63,12 @@ class AirportsGraph:
             self.airports_name[airports_df['name'].values[i]] = i
 
     def find_path(self, a_airport_name: string, b_airport_name: string):
-        a_airport_id = self.airports_name[a_airport_name]
-        b_airport_id = self.airports_name[b_airport_name]
+        try:
+            a_airport_id = self.airports_name[a_airport_name]
+            b_airport_id = self.airports_name[b_airport_name]
+        except KeyError:
+            return []
+
         airports_path = [None for i in range(len(self.graph))]
         airports_path[a_airport_id] = [0]
         airports_dist = [math.inf] * len(self.graph)
@@ -76,9 +80,9 @@ class AirportsGraph:
         while min(is_airports_done) is False:
             for i in range(len(airports_dist)):
                 if (
-                    is_airports_done[i] is False
-                    and self.graph[next_airport][i] != -1
-                    and airports_dist[i] > self.graph[next_airport][i] + airports_dist[next_airport]
+                        is_airports_done[i] is False
+                        and self.graph[next_airport][i] != -1
+                        and airports_dist[i] > self.graph[next_airport][i] + airports_dist[next_airport]
                 ):
                     airports_dist[i] = self.graph[next_airport][i] + airports_dist[next_airport]
                     airports_path[i] = []
@@ -96,27 +100,30 @@ class AirportsGraph:
                 break
             next_airport = min_id
             is_airports_done[next_airport] = True
-        print('airports_path',airports_path[b_airport_id])
-        airline_hub = []
-        travel_time = self.graph[a_airport_id][airports_path[b_airport_id][1]] - self.airports_df['park_time'].values[a_airport_id]
-        print('travel_time', travel_time)
-        print('airports_name', self.airports_name)
-        for i in range(1, len(airports_path[b_airport_id])-1):
-            airline_hub.append([list(self.airports_name.keys())[airports_path[b_airport_id][i]], travel_time, travel_time + self.airports_df['park_time'].values[airports_path[b_airport_id][i]]])
-            travel_time += self.graph[airports_path[b_airport_id][i]][airports_path[b_airport_id][i+1]]
-        print(1,*airline_hub)
 
-        # print(DataFrame(self.airports_name))
-        return [
-            'departure airport', list(self.airports_name.keys())[a_airport_id],
-            'airline_hub', '\n'.join([''.join(str(i)) for i in airline_hub]),
-            'arrival airport', airports_dist[b_airport_id]
-        ]
+        if airports_path[b_airport_id] is None:
+            return []
 
- # return {
- #            'departure airport': list(self.airports_name.keys())[a_airport_id],
- #            'travel_time': airports_dist[b_airport_id] - self.airports_df['park_time'].values[a_airport_id],
- #            'travel_route': airports_path[b_airport_id],
- #            'travel_finish_time': airports_dist[b_airport_id] - self.airports_df['park_time'].values[a_airport_id],
- #            'arrival airport': airports_dist[b_airport_id]
- #        }
+        route_details = [{
+            'airport_name': a_airport_name,
+            'arrival_time': None,
+            'departure_time': 0,
+        }]
+        arrival_time = -self.airports_df['park_time'].values[a_airport_id]
+        for i in range(1, len(airports_path[b_airport_id])):
+            airport_name = list(self.airports_name.keys())[airports_path[b_airport_id][i]]
+            arrival_time += self.graph[airports_path[b_airport_id][i - 1]][airports_path[b_airport_id][i]]
+
+            if i != len(airports_path[b_airport_id]) - 1:
+                park_time = self.airports_df['park_time'].values[airports_path[b_airport_id][i]]
+                departure_time = float(arrival_time + park_time)
+            else:
+                departure_time = None
+
+            route_details.append({
+                'airport_name': airport_name,
+                'arrival_time': float(arrival_time),
+                'departure_time': departure_time,
+            })
+
+        return route_details
