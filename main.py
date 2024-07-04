@@ -1,15 +1,35 @@
-# 1
-#ввод данных - аэропорт вылет А, аэропорт прилета Б, модель самолета
+import datetime
+import math
+import pandas as pd
+from pandas import DataFrame
+from AirportsGraph import AirportsGraph
 
-# 2
-#построение графа аэропортов
-# - считать csv файл с аэропортами
-# - рассчитать расстояние между точками по методом Винсенти
-# - соединим каждый аэропорт с каждым
+def hours_to_time(hours: float):
+    if math.isnan(hours) or hours is None:
+        return None
+    seconds = round(hours * 3600)
+    return datetime.time(seconds // 3600 % 24, seconds % 3600 // 60, seconds % 60)
 
+# считать csv файл с аэропортами и самолетами
+airports = pd.read_csv('data/airports.csv', sep=';')
+planes = pd.read_csv('data/planes.csv', sep=';')
 
-# 3
-#расчет самого быстрого пути от А до Б
+# считываем параметры перелета
+departure_airport_name = input('Введите аэропорт отправления: ')
+arrival_airport_name = input('Введите аэропорт прибытия: ')
+plane_name = input('Введите модель самолета: ')
 
-# 4
-#Вывод результата
+# cобираем граф и находим путь перелета
+airportsGraph = AirportsGraph(airports, planes[planes['name'] == plane_name].to_dict(orient='records')[0])
+route = DataFrame(airportsGraph.find_path(departure_airport_name, arrival_airport_name))
+
+# если в итоговом маршруте нет ни одного аэропорта, то путь не найден
+if len(route) == 0:
+    print('На данном самоелете невозможно совершить такой перелет')
+else:
+    # иначе переводим часы в читабельный формат
+    route['arrival_time_formatted'] = route['arrival_time'].apply(hours_to_time)
+    route['departure_time_formatted'] = route['departure_time'].apply(hours_to_time)
+    route.drop('departure_time', axis=1, inplace=True)
+    route.drop('arrival_time', axis=1, inplace=True)
+    print(route)
