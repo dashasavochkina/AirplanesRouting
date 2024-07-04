@@ -96,10 +96,27 @@ class AirportsGraph:
                 break
             next_airport = min_id
             is_airports_done[next_airport] = True
+        print('airports_path',airports_path[b_airport_id])
+        airline_hub = []
+        travel_time = self.graph[a_airport_id][airports_path[b_airport_id][1]] - self.airports_df['park_time'].values[a_airport_id]
+        print('travel_time', travel_time)
+        print('airports_name', self.airports_name)
+        for i in range(1, len(airports_path[b_airport_id])-1):
+            airline_hub.append([list(self.airports_name.keys())[airports_path[b_airport_id][i]], travel_time, travel_time + self.airports_df['park_time'].values[airports_path[b_airport_id][i]]])
+            travel_time += self.graph[airports_path[b_airport_id][i]][airports_path[b_airport_id][i+1]]
+        print(1,*airline_hub)
 
-        return {
-            'travel_time': airports_dist[b_airport_id] - self.airports_df['park_time'].values[a_airport_id],
-            'travel_route': airports_path[b_airport_id],
-            'travel_finish_time': airports_dist[b_airport_id] - self.airports_df['park_time'].values[a_airport_id]
-        }
+        # print(DataFrame(self.airports_name))
+        return [
+            'departure airport', list(self.airports_name.keys())[a_airport_id],
+            'airline_hub', '\n'.join([''.join(str(i)) for i in airline_hub]),
+            'arrival airport', airports_dist[b_airport_id]
+        ]
 
+ # return {
+ #            'departure airport': list(self.airports_name.keys())[a_airport_id],
+ #            'travel_time': airports_dist[b_airport_id] - self.airports_df['park_time'].values[a_airport_id],
+ #            'travel_route': airports_path[b_airport_id],
+ #            'travel_finish_time': airports_dist[b_airport_id] - self.airports_df['park_time'].values[a_airport_id],
+ #            'arrival airport': airports_dist[b_airport_id]
+ #        }
